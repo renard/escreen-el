@@ -1,11 +1,14 @@
 ;;; escreen.el --- emacs window session manager
 
-;;; Copyright (C) 1992, 94, 95, 97, 2001, 2005 Noah S. Friedman
+;;; Copyright (C) 1992, 94, 95, 97, 2001, 2005, 2010 Noah S. Friedman,
+;;;   Sébastien Gross.
 
 ;;; Author: Noah Friedman <friedman@splode.com>
-;;; Maintainer: friedman@splode.com
+;;; Maintainer: Sébastien Gross <seb❨ɑƬ❩chezwam❨ɖɵʈ❩org>
 ;;; Keywords: extensions
 ;;; Created: 1992-03-23
+;;; URL: https://git.chezwam.org:446/?p=cfg-emacs.git;a=blob;f=escreen.el
+;;; Last changed: 2010-07-28 19:42:58
 
 ;;; $Id: escreen.el,v 1.18 2005/05/23 09:47:13 friedman Exp $
 
@@ -55,6 +58,12 @@
 ;;   * persistance of screens across instances of emacs
 ;;     [look at johnw's work on this; depends on additional non-standard
 ;;     packages but perhaps those parts can be reimplemented inline.]
+
+;;; History:
+;; 2010-07-28
+;;   * Escreen Menu
+;;     - Add support to switch from a screen to an other.
+;;     - Add font-lock support.
 
 ;;; Code:
 
