@@ -888,14 +888,16 @@ Returns a list of numbers which represent screen numbers presently in use."
 
 (defun escreen-menu ()
   (interactive)
-  (escreen-configuration-alist-sort-by-number)
   (let ((escreen-menu-buffer (get-buffer-create "*Escreen List*"))
+
         alist data-map screen-number)
     ;; Display buffer now so update of screen cofiguration will be correct.
-    (display-buffer escreen-menu-buffer)
+    ;;(display-buffer escreen-menu-buffer)
     ;; Update escreen-configuration-alist to contain up-to-date information
     ;; on current screen, since we'll be displaying data about it.
+    (bury-buffer escreen-menu-buffer)
     (escreen-save-current-screen-configuration)
+    (escreen-configuration-alist-sort-by-number)
     (setq alist escreen-configuration-alist)
     (save-excursion
       (set-buffer escreen-menu-buffer)
@@ -903,33 +905,63 @@ Returns a list of numbers which represent screen numbers presently in use."
       (erase-buffer)
       (insert " Screen Buffers\n ------ -------\n")
       (while alist
-        (setq screen-data (car alist))
-        (setq alist (cdr alist))
+	(setq screen-data (car alist))
+	(setq alist (cdr alist))
 
-        (setq screen-number (escreen-configuration-screen-number screen-data))
-        (setq data-map (escreen-configuration-data-map screen-data))
+	(setq screen-number (escreen-configuration-screen-number screen-data))
+	(setq data-map (escreen-configuration-data-map screen-data))
 
-        (if (= screen-number escreen-current-screen-number)
-            (insert (format "*%-6d " screen-number))
-          (insert (format " %-6d " screen-number)))
-        (while data-map
+	(if (= screen-number escreen-current-screen-number)
+	    (insert (format "*%-6d " screen-number))
+	  (insert (format " %-6d " screen-number)))
+
+	(while data-map
           (insert (if (> (current-column) 0) "" "        ")
                   (escreen-configuration-data-map-critical-buffer-name
-                   (escreen-configuration-data-map-critical (car data-map)))
-                  "\n")
+                   (escreen-configuration-data-map-critical (car data-map))))
+	  (put-text-property (line-beginning-position) (point) 'escreen-property
+			     (list screen-number (caaar data-map)))
+	  (insert "\n")
           (setq data-map (cdr data-map)))
-        (insert "\n"))
+	(insert "\n"))
+      (switch-to-buffer escreen-menu-buffer)
       (escreen-menu-mode))))
 
-(defun escreen-menu-mode ()
-  (fundamental-mode)
-  (kill-all-local-variables)
+(defun escreen-switch-to-screen ()
+  "Switch to selected screen from `Escreen List' buffer."
+  (interactive)
+  (let ((prop (get-text-property (point) 'escreen-property)))
+    (when prop
+      (message (format "Property: %s" prop))
+      (bury-buffer)
+      (escreen-goto-screen (car prop))
+      (select-window (get-buffer-window (cadr prop))))))
+
+;;      (switch-to-buffer (cadr prop)))))
+
+
+(defvar escreen-menu-mode-map nil
+  "Keymap for `escreen-menu-mode'.")
+
+(setq escreen-menu-mode-map
+      (let ((map (make-sparse-keymap)))
+	(define-key map (kbd "RET") 'escreen-switch-to-screen)
+	(define-key map (kbd "q") 'bury-buffer)
+	(define-key map (kbd "g") 'escreen-menu)
+	map))
+
+
+
+(define-derived-mode escreen-menu-mode fundamental-mode "escreen-menu-mode"
+  "A major mode for handeling Escreens."
+  :group 'escreen
+
+  (setq mode-name "Escreen Menu")
   (setq buffer-undo-list t)
   (setq truncate-lines t)
   (setq buffer-read-only t)
-  (setq major-mode 'escreen-menu-mode)
-  (setq mode-name "Escreen Menu")
-  (run-hooks 'escreen-menu-mode-hook))
+  ;;(run-hooks 'escreen-menu-mode-hook)
+  (message "escreen menu mode created"))
 
 
 ;; Install this by doing
