@@ -912,21 +912,44 @@ Returns a list of numbers which represent screen numbers presently in use."
 	(setq screen-number (escreen-configuration-screen-number screen-data))
 	(setq data-map (escreen-configuration-data-map screen-data))
 
+	;; (if (= screen-number escreen-current-screen-number)
+	;;     (insert (format "*%-6d " screen-number))
+	;;   (insert (format " %-6d " screen-number)))
+
+
+
 	(if (= screen-number escreen-current-screen-number)
-	    (insert (format "*%-6d " screen-number))
-	  (insert (format " %-6d " screen-number)))
+	    (progn
+	      (insert (format "*%-6d " screen-number))
+	      (put-text-property (line-beginning-position) (point)
+				 'font-lock-face font-lock-keyword-face))
+	  (insert (format " %-6d " screen-number))
+	  (put-text-property (line-beginning-position) (point)
+			     'font-lock-face font-lock-constant-face))
 
 	(while data-map
           (insert (if (> (current-column) 0) "" "        ")
                   (escreen-configuration-data-map-critical-buffer-name
                    (escreen-configuration-data-map-critical (car data-map))))
-	  (put-text-property (line-beginning-position) (point)
-			     'escreen-property-screen screen-number)
-	  (put-text-property (line-beginning-position) (point)
-			     'escreen-property-buffer (caaar data-map))
 	  (insert "\n")
+	  (previous-line)
+	  ;; TODO Simplify this!
+	  (if (string= cur-buf-name (buffer-name (caaar data-map)))
+	      (put-text-property (+ (line-beginning-position) 8) (point-max)
+				 'font-lock-face font-lock-string-face)
+	    (put-text-property (+ (line-beginning-position) 8) (point-max)
+			       'font-lock-face font-lock-warning-face))
+	  (put-text-property (line-beginning-position) (point-max)
+			     'escreen-property-buffer (caaar data-map))
+	  (put-text-property (line-beginning-position) (point-max)
+			     'escreen-property-screen screen-number)
+	  (goto-char (point-max))
           (setq data-map (cdr data-map)))
-	(insert "\n"))
+	(insert "\n")
+	(previous-line)
+	(put-text-property (line-beginning-position) (point-max)
+			   'escreen-property-screen screen-number)
+	(goto-char (point-max)))
       (search-backward-regexp "^\\*[0-9]\+ " nil t)
       (search-forward cur-buf-name)
       (beginning-of-line)
@@ -936,29 +959,61 @@ Returns a list of numbers which represent screen numbers presently in use."
 (defun escreen-backward-screen ()
   "Move point to previous screen in Escreen Menu."
   (interactive)
-  (beginning-of-line)
-  (search-backward-regexp "^\\(\\*\\| \\)[0-9]+ +.+$" nil t)
+  (goto-char (previous-single-property-change
+	      (point) 'escreen-property-screen
+	      nil (point-min)))
   (beginning-of-line))
 
 (defun escreen-forward-screen ()
   "Move point to next screen in Escreen Menu."
   (interactive)
-  (end-of-line)
-  (search-forward-regexp "^\\(\\*\\| \\)[0-9]+ +.+$" nil t)
+  (goto-char (next-single-property-change
+	      (point) 'escreen-property-screen
+	      nil (point-max)))
   (beginning-of-line))
+
+(defun escreen-backward-buffer ()
+  "Move point to previous buffer in Escreen Menu."
+  (interactive)
+  (goto-char (previous-single-property-change
+	      (point) 'escreen-property-buffer
+	      nil (point-min)))
+  (beginning-of-line)
+  (unless (get-text-property (point)
+			     'escreen-property-buffer)
+    (escreen-backward-buffer)))
+
+
+(defun escreen-forward-buffer ()
+  "Move point to next buffer in Escreen Menu."
+  (interactive)
+  (goto-char (next-single-property-change
+	      (point) 'escreen-property-buffer
+	      nil (point-max)))
+  (beginning-of-line)
+  (unless (get-text-property (point)
+			     'escreen-property-buffer)
+    (escreen-forward-buffer)))
+
+
 
 
 (defun escreen-switch-to-screen ()
   "Switch to selected screen from `Escreen List' buffer."
   (interactive)
-  (let ((screen-number-property (get-text-property (point)
-						   'escreen-property-screen)))
-    (when screen-number-property
+  (end-of-line)
+  (backward-char)
+  (let ((buffer-property (get-text-property (point)
+					    'escreen-property-buffer))
+	(screen-property (get-text-property (point)
+					    'escreen-property-screen)))
+    (message (format "Got buffer '%s'" buffer-property))
+    (message (format "Got screen '%s'" screen-property))
+    (when buffer-property
       (bury-buffer)
-      (escreen-goto-screen screen-number-property)
-      (select-window (get-buffer-window
-		      (get-text-property (point)
-					 'escreen-property-buffer))))))
+      (escreen-goto-screen screen-property)
+      (select-window (get-buffer-window buffer-property)))))
+
 
 (defvar escreen-menu-mode-map nil
   "Keymap for `escreen-menu-mode'.")
@@ -972,8 +1027,8 @@ Returns a list of numbers which represent screen numbers presently in use."
 	(define-key map (kbd "<") 'escreen-backward-screen)
 	(define-key map (kbd "M-n") 'escreen-forward-screen)
 	(define-key map (kbd "M-p") 'escreen-backward-screen)
-	(define-key map (kbd "n") 'next-line)
-	(define-key map (kbd "p") 'previous-line)
+	(define-key map (kbd "n") 'escreen-forward-buffer)
+	(define-key map (kbd "p") 'escreen-backward-buffer)
 	map))
 
 
