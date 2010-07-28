@@ -920,8 +920,10 @@ Returns a list of numbers which represent screen numbers presently in use."
           (insert (if (> (current-column) 0) "" "        ")
                   (escreen-configuration-data-map-critical-buffer-name
                    (escreen-configuration-data-map-critical (car data-map))))
-	  (put-text-property (line-beginning-position) (point) 'escreen-property
-			     (list screen-number (caaar data-map)))
+	  (put-text-property (line-beginning-position) (point)
+			     'escreen-property-screen screen-number)
+	  (put-text-property (line-beginning-position) (point)
+			     'escreen-property-buffer (caaar data-map))
 	  (insert "\n")
           (setq data-map (cdr data-map)))
 	(insert "\n"))
@@ -949,11 +951,14 @@ Returns a list of numbers which represent screen numbers presently in use."
 (defun escreen-switch-to-screen ()
   "Switch to selected screen from `Escreen List' buffer."
   (interactive)
-  (let ((prop (get-text-property (point) 'escreen-property)))
-    (when prop
+  (let ((screen-number-property (get-text-property (point)
+						   'escreen-property-screen)))
+    (when screen-number-property
       (bury-buffer)
-      (escreen-goto-screen (car prop))
-      (select-window (get-buffer-window (cadr prop))))))
+      (escreen-goto-screen screen-number-property)
+      (select-window (get-buffer-window
+		      (get-text-property (point)
+					 'escreen-property-buffer))))))
 
 (defvar escreen-menu-mode-map nil
   "Keymap for `escreen-menu-mode'.")
