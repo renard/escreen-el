@@ -888,7 +888,8 @@ Returns a list of numbers which represent screen numbers presently in use."
 
 (defun escreen-menu ()
   (interactive)
-  (let ((escreen-menu-buffer (get-buffer-create "*Escreen List*"))
+  (let ((cur-buf-name (buffer-name))
+	(escreen-menu-buffer (get-buffer-create "*Escreen List*"))
 
         alist data-map screen-number)
     ;; Display buffer now so update of screen cofiguration will be correct.
@@ -924,21 +925,35 @@ Returns a list of numbers which represent screen numbers presently in use."
 	  (insert "\n")
           (setq data-map (cdr data-map)))
 	(insert "\n"))
+      (search-backward-regexp "^\\*[0-9]\+ " nil t)
+      (search-forward cur-buf-name)
+      (beginning-of-line)
       (switch-to-buffer escreen-menu-buffer)
       (escreen-menu-mode))))
+
+(defun escreen-backward-screen ()
+  "Move point to previous screen in Escreen Menu."
+  (interactive)
+  (beginning-of-line)
+  (search-backward-regexp "^\\(\\*\\| \\)[0-9]+ +.+$" nil t)
+  (beginning-of-line))
+
+(defun escreen-forward-screen ()
+  "Move point to next screen in Escreen Menu."
+  (interactive)
+  (end-of-line)
+  (search-forward-regexp "^\\(\\*\\| \\)[0-9]+ +.+$" nil t)
+  (beginning-of-line))
+
 
 (defun escreen-switch-to-screen ()
   "Switch to selected screen from `Escreen List' buffer."
   (interactive)
   (let ((prop (get-text-property (point) 'escreen-property)))
     (when prop
-      (message (format "Property: %s" prop))
       (bury-buffer)
       (escreen-goto-screen (car prop))
       (select-window (get-buffer-window (cadr prop))))))
-
-;;      (switch-to-buffer (cadr prop)))))
-
 
 (defvar escreen-menu-mode-map nil
   "Keymap for `escreen-menu-mode'.")
@@ -948,6 +963,12 @@ Returns a list of numbers which represent screen numbers presently in use."
 	(define-key map (kbd "RET") 'escreen-switch-to-screen)
 	(define-key map (kbd "q") 'bury-buffer)
 	(define-key map (kbd "g") 'escreen-menu)
+	(define-key map (kbd ">") 'escreen-forward-screen)
+	(define-key map (kbd "<") 'escreen-backward-screen)
+	(define-key map (kbd "M-n") 'escreen-forward-screen)
+	(define-key map (kbd "M-p") 'escreen-backward-screen)
+	(define-key map (kbd "n") 'next-line)
+	(define-key map (kbd "p") 'previous-line)
 	map))
 
 
