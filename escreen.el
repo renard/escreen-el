@@ -8,7 +8,7 @@
 ;;; Keywords: extensions
 ;;; Created: 1992-03-23
 ;;; URL: https://git.chezwam.org:446/?p=cfg-emacs.git;a=blob;f=escreen.el
-;;; Last changed: 2010-07-29 18:01:06
+;;; Last changed: 2010-07-29 19:24:07
 
 ;;; $Id: escreen.el,v 1.18 2005/05/23 09:47:13 friedman Exp $
 
@@ -58,12 +58,6 @@
 ;;   * persistance of screens across instances of emacs
 ;;     [look at johnw's work on this; depends on additional non-standard
 ;;     packages but perhaps those parts can be reimplemented inline.]
-
-;;; History:
-;; 2010-07-28
-;;   * Escreen Menu
-;;     - Add support to switch from a screen to an other.
-;;     - Add font-lock support.
 
 ;;; Code:
 
@@ -152,8 +146,6 @@ An example function that can make use of this hook is
   "Face name used for current screen."
   :type 'face
   :group 'escreen)
-
-
 
 
 ;; Keybindings
@@ -935,7 +927,10 @@ Returns a list of numbers which represent screen numbers presently in use."
     (setq buffer-read-only nil)
     (erase-buffer)
     (insert
-     (propertize "Screen Buffers\n------ -------\n" 'intangible 1))
+     (propertize
+      (concat
+       "Screen MR      Buffers          Mode             Size       Filename\n"
+       "------ -- --------------- -------------------- -------- ----------------\n") 'intangible 1))
     ;; (setq header-line-format "Screen Buffers")
     (while alist
       (setq screen-data (car alist))
@@ -960,9 +955,9 @@ Returns a list of numbers which represent screen numbers presently in use."
 	  ;; insert buffer name
 	  (insert
 	   (propertize
-	    (format "%s %s\n"
-		    (if (> (current-column) 0) "" "       ")
-		    es-this-buffer-name)
+	    (format "%s%s\n"
+		    (if (> (current-column) 0) " " "       ")
+		    (escreen-get-buffer-info es-this-buffer))
 	    'escreen-property-buffer es-this-buffer
 	    'escreen-property-screen screen-number
 	    'escreen-property-buffer-current (if (string= cur-buf-name es-this-buffer-name)
@@ -972,7 +967,11 @@ Returns a list of numbers which represent screen numbers presently in use."
 			      escreen-buffer-face))))
 	(setq data-map (cdr data-map)))
       ;; insert a separation between buffers
-      (insert (propertize "  \n" 'intangible t)))
+      (if alist
+	  (insert (propertize "\n" 'intangible t))
+	(delete-blank-lines)
+	(backward-delete-char 1)))
+
 
 
     ;;(search-backward-regexp "^\\*[0-9]\+ " nil t)
@@ -981,6 +980,17 @@ Returns a list of numbers which represent screen numbers presently in use."
     (escreen-menu-mode)
     (escreen-menu-select-current-buffer)))
 
+(defun escreen-get-buffer-info (buffer)
+  "Get BUFFER information."
+  (save-excursion
+    (set-buffer buffer)
+    (format "%s%s %-15s %-20s % 8d %-15s"
+	    (if (buffer-modified-p) "M" " ")
+	    (if buffer-read-only "%" " ")
+	    (buffer-name)
+	    mode-name
+	    (buffer-size)
+	    (or (buffer-file-name) ""))))
 
 (defun escreen-menu-select-current-buffer ()
   "Place pointer to current buffer line in Escreen Menu.
