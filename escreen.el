@@ -8,7 +8,7 @@
 ;;; Keywords: extensions
 ;;; Created: 1992-03-23
 ;;; URL: https://git.chezwam.org:446/?p=cfg-emacs.git;a=blob;f=escreen.el
-;;; Last changed: 2010-07-29 17:47:27
+;;; Last changed: 2010-07-29 18:01:06
 
 ;;; $Id: escreen.el,v 1.18 2005/05/23 09:47:13 friedman Exp $
 
@@ -132,6 +132,28 @@ An example function that can make use of this hook is
   "*Hook to run by `escreen-menu' after everything else."
   :type 'hook
   :group 'escreen)
+
+(defcustom escreen-buffer-face  font-lock-preprocessor-face
+  "Face name used for buffer."
+  :type 'face
+  :group 'escreen)
+
+(defcustom escreen-buffer-current-face  font-lock-keyword-face
+  "Face name used for current buffer."
+  :type 'face
+  :group 'escreen)
+
+(defcustom escreen-screen-face  font-lock-variable-name-face
+  "Face name used for screen."
+  :type 'face
+  :group 'escreen)
+
+(defcustom escreen-screen-current-face  font-lock-string-face
+  "Face name used for current screen."
+  :type 'face
+  :group 'escreen)
+
+
 
 
 ;; Keybindings
@@ -929,7 +951,7 @@ Returns a list of numbers which represent screen numbers presently in use."
 	'escreen-property-screen-current
 	(if (= screen-number escreen-current-screen-number) t nil)
 	'font-lock-face(if (= screen-number escreen-current-screen-number)
-			   font-lock-keyword-face font-lock-constant-face)))
+			   escreen-buffer-current-face escreen-buffer-face)))
       (while data-map
 	(let ((es-this-buffer-name (escreen-configuration-data-map-critical-buffer-name
 				    (escreen-configuration-data-map-critical (car data-map))))
@@ -946,8 +968,8 @@ Returns a list of numbers which represent screen numbers presently in use."
 	    'escreen-property-buffer-current (if (string= cur-buf-name es-this-buffer-name)
 						 t nil)
 	    'font-lock-face (if (string= cur-buf-name es-this-buffer-name)
-				font-lock-string-face
-			      font-lock-warning-face))))
+				escreen-buffer-current-face
+			      escreen-buffer-face))))
 	(setq data-map (cdr data-map)))
       ;; insert a separation between buffers
       (insert (propertize "  \n" 'intangible t)))
