@@ -8,7 +8,7 @@
 ;;; Keywords: extensions
 ;;; Created: 1992-03-23
 ;;; URL: https://git.chezwam.org:446/?p=cfg-emacs.git;a=blob;f=escreen.el
-;;; Last changed: 2010-07-28 19:42:58
+;;; Last changed: 2010-07-29 17:34:48
 
 ;;; $Id: escreen.el,v 1.18 2005/05/23 09:47:13 friedman Exp $
 
@@ -894,13 +894,15 @@ Returns a list of numbers which represent screen numbers presently in use."
     (and (= (nth 0 edges) 0)
          (= (nth 1 edges) 0))))
 
+
 
 (defun escreen-menu ()
   (interactive)
   (let ((cur-buf-name (buffer-name))
 	(escreen-menu-buffer (get-buffer-create "*Escreen List*"))
-
         alist data-map screen-number)
+    (message (format "Current buffer: %s, current screen: %d"
+		     cur-buf-name escreen-current-screen-number))
     ;; Display buffer now so update of screen cofiguration will be correct.
     ;;(display-buffer escreen-menu-buffer)
     ;; Update escreen-configuration-alist to contain up-to-date information
@@ -909,61 +911,73 @@ Returns a list of numbers which represent screen numbers presently in use."
     (escreen-save-current-screen-configuration)
     (escreen-configuration-alist-sort-by-number)
     (setq alist escreen-configuration-alist)
-    (save-excursion
-      (set-buffer escreen-menu-buffer)
-      (setq buffer-read-only nil)
-      (erase-buffer)
-      (insert " Screen Buffers\n ------ -------\n")
-      (while alist
-	(setq screen-data (car alist))
-	(setq alist (cdr alist))
+    (set-buffer escreen-menu-buffer)
+    (setq buffer-read-only nil)
+    (erase-buffer)
+    (insert
+     (propertize "Screen Buffers\n------ -------\n" 'intangible 1))
+    ;; (setq header-line-format "Screen Buffers")
+    (while alist
+      (setq screen-data (car alist))
+      (setq alist (cdr alist))
 
-	(setq screen-number (escreen-configuration-screen-number screen-data))
-	(setq data-map (escreen-configuration-data-map screen-data))
+      (setq screen-number (escreen-configuration-screen-number screen-data))
+      (setq data-map (escreen-configuration-data-map screen-data))
+      ;; Insert screen number
+      (insert
+       (propertize
+	(format "%-5d " screen-number)
+	'escreen-property-screen screen-number
+	'escreen-property-screen-current
+	(if (= screen-number escreen-current-screen-number) t nil)
+	'font-lock-face(if (= screen-number escreen-current-screen-number)
+			   font-lock-keyword-face font-lock-constant-face)))
+      (while data-map
+	(let ((es-this-buffer-name (escreen-configuration-data-map-critical-buffer-name
+				    (escreen-configuration-data-map-critical (car data-map))))
+	      (es-this-buffer (escreen-configuration-data-map-critical-buffer
+			       (escreen-configuration-data-map-critical (car data-map)))))
+	  ;; insert buffer name
+	  (insert
+	   (propertize
+	    (format "%s %s\n"
+		    (if (> (current-column) 0) "" "       ")
+		    es-this-buffer-name)
+	    'escreen-property-buffer es-this-buffer
+	    'escreen-property-screen screen-number
+	    'escreen-property-buffer-current (if (string= cur-buf-name es-this-buffer-name)
+						 t nil)
+	    'font-lock-face (if (string= cur-buf-name es-this-buffer-name)
+				font-lock-string-face
+			      font-lock-warning-face))))
+	(setq data-map (cdr data-map)))
+      ;; insert a separation between buffers
+      (insert (propertize "  \n" 'intangible t)))
 
-	;; (if (= screen-number escreen-current-screen-number)
-	;;     (insert (format "*%-6d " screen-number))
-	;;   (insert (format " %-6d " screen-number)))
+
+    ;;(search-backward-regexp "^\\*[0-9]\+ " nil t)
+    ;;(search-forward cur-buf-name)
+    (switch-to-buffer escreen-menu-buffer)
+    (escreen-menu-mode)
+    (escreen-menu-select-current-buffer)))
 
 
+(defun escreen-menu-select-current-buffer ()
+  "Place pointer to current buffer line in Escreen Menu.
 
-	(if (= screen-number escreen-current-screen-number)
-	    (progn
-	      (insert (format "*%-6d " screen-number))
-	      (put-text-property (line-beginning-position) (point)
-				 'font-lock-face font-lock-keyword-face))
-	  (insert (format " %-6d " screen-number))
-	  (put-text-property (line-beginning-position) (point)
-			     'font-lock-face font-lock-constant-face))
+Basically looks for escreen-property-screen-current and
+escreen-property-buffer-current text-property."
+  (interactive)
+  (message (format "Start: %d" (line-number-at-pos)))
+  (goto-char
+   (text-property-any (point-min) (point-max) 'escreen-property-screen-current t))
+  (message (format "After screen: %d" (line-number-at-pos)))
+  (goto-char
+   (text-property-any (point) (point-max) 'escreen-property-buffer-current t))
+  (message (format "After buffer: %d" (line-number-at-pos)))
+  (beginning-of-line))
 
-	(while data-map
-          (insert (if (> (current-column) 0) "" "        ")
-                  (escreen-configuration-data-map-critical-buffer-name
-                   (escreen-configuration-data-map-critical (car data-map))))
-	  (insert "\n")
-	  (previous-line)
-	  ;; TODO Simplify this!
-	  (if (string= cur-buf-name (buffer-name (caaar data-map)))
-	      (put-text-property (+ (line-beginning-position) 8) (point-max)
-				 'font-lock-face font-lock-string-face)
-	    (put-text-property (+ (line-beginning-position) 8) (point-max)
-			       'font-lock-face font-lock-warning-face))
-	  (put-text-property (line-beginning-position) (point-max)
-			     'escreen-property-buffer (caaar data-map))
-	  (put-text-property (line-beginning-position) (point-max)
-			     'escreen-property-screen screen-number)
-	  (goto-char (point-max))
-          (setq data-map (cdr data-map)))
-	(insert "\n")
-	(previous-line)
-	(put-text-property (line-beginning-position) (point-max)
-			   'escreen-property-screen screen-number)
-	(goto-char (point-max)))
-      (search-backward-regexp "^\\*[0-9]\+ " nil t)
-      (search-forward cur-buf-name)
-      (beginning-of-line)
-      (switch-to-buffer escreen-menu-buffer)
-      (escreen-menu-mode))))
+
 
 (defun escreen-backward-screen ()
   "Move point to previous screen in Escreen Menu."
@@ -1004,34 +1018,40 @@ Returns a list of numbers which represent screen numbers presently in use."
   (goto-char (previous-single-property-change
 	      (point) 'escreen-property-buffer
 	      nil (point-min)))
-  (beginning-of-line)
+  ;; make sure there is a escreen-property-buffer proprety.
   (unless (or
-	   (get-text-property(point) 'escreen-property-buffer)
-	   (= (point) (point-min)))
+  	   (get-text-property(point) 'escreen-property-buffer)
+  	   (= (point) (point-min)))
     (escreen-backward-buffer))
+  ;; Make sure the very first buffer is selected.
   (when (= (point) (point-min))
-    (escreen-forward-buffer)))
+    (escreen-forward-buffer))
+  (beginning-of-line))
 
 
 (defun escreen-forward-buffer ()
   "Move point to next buffer in Escreen Menu."
   (interactive)
+  (end-of-line)
   (goto-char (next-single-property-change
 	      (point) 'escreen-property-buffer
 	      nil (point-max)))
-  (beginning-of-line)
+  ;; make sure there is a escreen-property-buffer proprety.
   (unless (or
-	   (get-text-property (point) 'escreen-property-buffer)
-	   (= (point) (point-max)))
+  	   (get-text-property (point) 'escreen-property-buffer)
+  	   (= (point) (point-max)))
     (escreen-forward-buffer))
+  ;; Make sure the very last buffer is selected.
   (when (= (point) (point-max))
-    (escreen-backward-buffer)))
+    (escreen-backward-buffer))
+  (beginning-of-line))
+
 
 (defun escreen-switch-to-screen ()
   "Switch to selected screen from `Escreen List' buffer."
   (interactive)
-  (end-of-line)
-  (backward-char)
+  ;;(end-of-line)
+  ;;(backward-char)
   (let ((buffer-property (get-text-property (point)
 					    'escreen-property-buffer))
 	(screen-property (get-text-property (point)
@@ -1052,12 +1072,20 @@ Returns a list of numbers which represent screen numbers presently in use."
 	(define-key map (kbd "RET") 'escreen-switch-to-screen)
 	(define-key map (kbd "q") 'bury-buffer)
 	(define-key map (kbd "g") 'escreen-menu)
+
+	(define-key map (kbd "<right>") 'escreen-forward-screen)
+	(define-key map (kbd "<left>") 'escreen-backward-screen)
 	(define-key map (kbd ">") 'escreen-forward-screen)
 	(define-key map (kbd "<") 'escreen-backward-screen)
 	(define-key map (kbd "M-n") 'escreen-forward-screen)
 	(define-key map (kbd "M-p") 'escreen-backward-screen)
+
+	(define-key map (kbd "<down>") 'escreen-forward-buffer)
+	(define-key map (kbd "<up>") 'escreen-backward-buffer)
 	(define-key map (kbd "n") 'escreen-forward-buffer)
 	(define-key map (kbd "p") 'escreen-backward-buffer)
+	(define-key map (kbd "C-n") 'escreen-forward-buffer)
+	(define-key map (kbd "C-p") 'escreen-backward-buffer)
 	map))
 
 
