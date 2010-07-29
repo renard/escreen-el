@@ -971,7 +971,15 @@ Returns a list of numbers which represent screen numbers presently in use."
   (goto-char (previous-single-property-change
 	      (point) 'escreen-property-screen
 	      nil (point-min)))
-  (beginning-of-line))
+  (beginning-of-line)
+  ;; make sure there is a escreen-property-screen proprety.
+  (unless (or
+	   (get-text-property(point) 'escreen-property-screen)
+	   (= (point) (point-min)))
+    (escreen-backward-screen))
+  ;; Make sure the very first escreen is selected.
+  (when (= (point) (point-min))
+    (escreen-forward-screen)))
 
 (defun escreen-forward-screen ()
   "Move point to next screen in Escreen Menu."
@@ -979,7 +987,16 @@ Returns a list of numbers which represent screen numbers presently in use."
   (goto-char (next-single-property-change
 	      (point) 'escreen-property-screen
 	      nil (point-max)))
-  (beginning-of-line))
+  (beginning-of-line)
+  ;; make sure there is a escreen-property-screen proprety.
+  (unless (or
+	   (get-text-property(point) 'escreen-property-screen)
+	   (= (point) (point-max)))
+    (escreen-forward-screen))
+  ;; Make sure the very last escreen is selected.
+  (when (= (point) (point-max))
+    (escreen-backward-screen)))
+
 
 (defun escreen-backward-buffer ()
   "Move point to previous buffer in Escreen Menu."
