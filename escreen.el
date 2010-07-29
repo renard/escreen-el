@@ -8,7 +8,7 @@
 ;;; Keywords: extensions
 ;;; Created: 1992-03-23
 ;;; URL: https://git.chezwam.org:446/?p=cfg-emacs.git;a=blob;f=escreen.el
-;;; Last changed: 2010-07-29 17:37:53
+;;; Last changed: 2010-07-29 17:47:27
 
 ;;; $Id: escreen.el,v 1.18 2005/05/23 09:47:13 friedman Exp $
 
@@ -901,8 +901,6 @@ Returns a list of numbers which represent screen numbers presently in use."
   (let ((cur-buf-name (buffer-name))
 	(escreen-menu-buffer (get-buffer-create "*Escreen List*"))
         alist data-map screen-number)
-    (message (format "Current buffer: %s, current screen: %d"
-		     cur-buf-name escreen-current-screen-number))
     ;; Display buffer now so update of screen cofiguration will be correct.
     ;;(display-buffer escreen-menu-buffer)
     ;; Update escreen-configuration-alist to contain up-to-date information
@@ -968,13 +966,10 @@ Returns a list of numbers which represent screen numbers presently in use."
 Basically looks for escreen-property-screen-current and
 escreen-property-buffer-current text-property."
   (interactive)
-  (message (format "Start: %d" (line-number-at-pos)))
   (goto-char
    (text-property-any (point-min) (point-max) 'escreen-property-screen-current t))
-  (message (format "After screen: %d" (line-number-at-pos)))
   (goto-char
    (text-property-any (point) (point-max) 'escreen-property-buffer-current t))
-  (message (format "After buffer: %d" (line-number-at-pos)))
   (beginning-of-line))
 
 
@@ -1056,8 +1051,6 @@ escreen-property-buffer-current text-property."
 					    'escreen-property-buffer))
 	(screen-property (get-text-property (point)
 					    'escreen-property-screen)))
-    (message (format "Got buffer '%s'" buffer-property))
-    (message (format "Got screen '%s'" screen-property))
     (when buffer-property
       (bury-buffer)
       (escreen-goto-screen screen-property)
@@ -1097,9 +1090,9 @@ escreen-property-buffer-current text-property."
   (setq mode-name "Escreen Menu")
   (setq buffer-undo-list t)
   (setq truncate-lines t)
-  (setq buffer-read-only t)
+  (setq buffer-read-only t))
   ;;(run-hooks 'escreen-menu-mode-hook)
-  (message "escreen menu mode created"))
+
 
 
 ;; Install this by doing
