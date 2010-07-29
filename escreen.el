@@ -1005,9 +1005,12 @@ Returns a list of numbers which represent screen numbers presently in use."
 	      (point) 'escreen-property-buffer
 	      nil (point-min)))
   (beginning-of-line)
-  (unless (get-text-property (point)
-			     'escreen-property-buffer)
-    (escreen-backward-buffer)))
+  (unless (or
+	   (get-text-property(point) 'escreen-property-buffer)
+	   (= (point) (point-min)))
+    (escreen-backward-buffer))
+  (when (= (point) (point-min))
+    (escreen-forward-buffer)))
 
 
 (defun escreen-forward-buffer ()
@@ -1017,12 +1020,12 @@ Returns a list of numbers which represent screen numbers presently in use."
 	      (point) 'escreen-property-buffer
 	      nil (point-max)))
   (beginning-of-line)
-  (unless (get-text-property (point)
-			     'escreen-property-buffer)
-    (escreen-forward-buffer)))
-
-
-
+  (unless (or
+	   (get-text-property (point) 'escreen-property-buffer)
+	   (= (point) (point-max)))
+    (escreen-forward-buffer))
+  (when (= (point) (point-max))
+    (escreen-backward-buffer)))
 
 (defun escreen-switch-to-screen ()
   "Switch to selected screen from `Escreen List' buffer."
