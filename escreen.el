@@ -8,7 +8,7 @@
 ;;; Keywords: extensions
 ;;; Created: 1992-03-23
 ;;; URL: https://git.chezwam.org:446/?p=cfg-emacs.git;a=blob;f=escreen.el
-;;; Last changed: 2010-07-29 19:24:07
+;;; Last changed: 2010-07-29 19:41:38
 
 ;;; $Id: escreen.el,v 1.18 2005/05/23 09:47:13 friedman Exp $
 
@@ -920,6 +920,7 @@ Returns a list of numbers which represent screen numbers presently in use."
     ;; Update escreen-configuration-alist to contain up-to-date information
     ;; on current screen, since we'll be displaying data about it.
     (bury-buffer escreen-menu-buffer)
+    ;;(switch-to-buffer (car (buffer-list)))
     (escreen-save-current-screen-configuration)
     (escreen-configuration-alist-sort-by-number)
     (setq alist escreen-configuration-alist)
@@ -1092,9 +1093,11 @@ escreen-property-buffer-current text-property."
 (defvar escreen-menu-mode-map nil
   "Keymap for `escreen-menu-mode'.")
 
+
 (setq escreen-menu-mode-map
       (let ((map (make-sparse-keymap)))
 	(define-key map (kbd "RET") 'escreen-switch-to-screen)
+	(define-key map (kbd "SPC") 'escreen-switch-to-screen)
 	(define-key map (kbd "q") 'bury-buffer)
 	(define-key map (kbd "g") 'escreen-menu)
 
@@ -1109,6 +1112,8 @@ escreen-property-buffer-current text-property."
 	(define-key map (kbd "<up>") 'escreen-backward-buffer)
 	(define-key map (kbd "n") 'escreen-forward-buffer)
 	(define-key map (kbd "p") 'escreen-backward-buffer)
+	(define-key map (kbd "]") 'escreen-forward-buffer)
+	(define-key map (kbd "[") 'escreen-backward-buffer)
 	(define-key map (kbd "C-n") 'escreen-forward-buffer)
 	(define-key map (kbd "C-p") 'escreen-backward-buffer)
 	map))
