@@ -8,7 +8,7 @@
 ;;; Keywords: extensions
 ;;; Created: 1992-03-23
 ;;; URL: https://git.chezwam.org:446/?p=cfg-emacs.git;a=blob;f=escreen.el
-;;; Last changed: 2010-07-29 17:34:48
+;;; Last changed: 2010-07-29 17:37:53
 
 ;;; $Id: escreen.el,v 1.18 2005/05/23 09:47:13 friedman Exp $
 
@@ -1050,7 +1050,7 @@ escreen-property-buffer-current text-property."
 (defun escreen-switch-to-screen ()
   "Switch to selected screen from `Escreen List' buffer."
   (interactive)
-  ;;(end-of-line)
+  (end-of-line)
   ;;(backward-char)
   (let ((buffer-property (get-text-property (point)
 					    'escreen-property-buffer))
